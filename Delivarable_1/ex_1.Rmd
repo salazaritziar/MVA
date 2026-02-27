@@ -1,0 +1,218 @@
+---
+title: "R Notebook"
+output: "pdf_document"
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+# Exercise 1: Preprocessing and multivariate analysis
+
+In this first exercise we are going to work with a real datasets
+(*Palmer Penguins or the Penguin Data*) in order to put into practice
+the concepts and techniques explained in the theory class about
+preprocessing.
+
+The work **must** be done in pairs.
+
+```{r}
+list.of.packages = c(
+  "ggplot2", 
+  "outliers", 
+  "readr", 
+  "mvoutlier", 
+  "chemometrics", 
+  "adamethods", 
+  "DMwR2", 
+  "dplyr",
+  "patchwork",
+  "Rlof", 
+  "solitude",
+  "tidyverse",
+  "palmerpenguins",
+  "missForest",
+  "mice"
+  ) 
+
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages) > 0) {
+  install.packages(new.packages)
+}
+lapply(list.of.packages, require, character.only = T)
+rm(list.of.packages, new.packages)
+```
+
+The dataset will be simplified a bit.
+
+```{r}
+data("penguins")
+?penguins
+
+cols <- c("species", "bill_length_mm", "bill_depth_mm", "flipper_length_mm", 
+          "body_mass_g", "sex")
+df <- penguins %>% 
+  select(cols)
+
+df_clean <- df %>% 
+  select(-species) %>% 
+  drop_na()
+
+n <- nrow(df_clean) # Number of observations
+p <- ncol(df_clean) # Number of variables
+```
+
+## Encoding
+
+**Q1: Transform the *sex* variable so it can be used in the analysis.**
+
+```{r}
+df_clean$sex[df_clean$sex=='male'] = 1
+df_clean$sex[df_clean$sex=='female'] = 0
+```
+
+## Outliers analysis
+
+Using the **df_clean** dataframe answer the following questions. Focus
+on the variables *Flipper length* and *Bill length* for all the
+analyses.
+
+**Q2: Use the Local Outlier Factor method (with** $k=20$) and identify
+the top five outliers using the quantile $97.5\%$ tp find the score
+threshold. Generate a scatter plot to display the dataset, highlighting
+any observations classified as outliers.\*\*
+
+```{r}
+
+```
+
+**Q3: Use the Isolation Tree algorithm with** $100$ trees and identify
+the top five outliers. Use the quantile $97.5\%$ to find the score
+threshold Generate a scatter plot to display the dataset, highlighting
+any observations classified as outliers.\*\*
+
+```{r}
+
+```
+
+**Q4: From the previous results, which observations can be considered
+outliers? Why? Discuss what actions should be taken regarding them**
+
+## Missing values analysis
+
+Now using the `df` dataframe, answer the following questions:
+
+**Q5: Are there missing values? How we classify them (MCAR; MAR; MNAR)?
+Quantify the quality of the data using the missing values.**
+
+```{r}
+
+```
+
+**Q6: Perform a k-NN Imputation and a MICE imputation. Compare them.
+Which imputation has better quality? Why?**
+
+*Hint*: I provide code for the plots. Store the k-NN imputation in a
+dataframe with name `df_1nn` and the MICE imputation in a dataframe with
+name `df_mice` in order to perform the plots. Think carefully your
+answers and check the consistency of the imputations.
+
+```{r}
+plot_columns <- cols[-c(1,6)]
+
+for (column in plot_columns){
+  comparison_df <- data.frame(
+  KNN_1    = df_1nn[[column]],
+  MICE     = df_mice[[column]]
+  )
+  plot_data <- comparison_df %>%
+    pivot_longer(cols = everything(), names_to = "Method", values_to = "Value")
+  
+  p <- ggplot(plot_data, aes(x = Value, color = Method, fill = Method)) +
+    geom_density(alpha = 0.1, linewidth = 1) +
+    labs(
+      title = "Comparison of Imputation Methods: 
+      Distribution of flipper_length_mm",
+      x = "Value of flipper_length_mm",
+      y = "Density"
+    ) +
+    theme_minimal() +
+    scale_color_brewer(palette = "Set1") +
+    scale_fill_brewer(palette = "Set1")
+  
+  print(p)
+  
+}
+```
+
+```{r}
+subset_knn <- df_1nn %>%
+  select(body_mass_g, sex) %>%
+  mutate(Method = "kNN")
+
+subset_mice <- df_mice %>%
+  select(body_mass_g, sex) %>%
+  mutate(Method = "MICE")
+
+df_comparison <- bind_rows(subset_knn, subset_mice)
+
+df_comparison <- df_comparison %>%
+  mutate(sex = factor(sex, labels = c("Female", "Male")))
+
+ggplot(df_comparison, aes(x = sex, y = body_mass_g, fill = Method)) +
+  geom_boxplot(alpha = 0.7) +
+  facet_wrap(~ Method) +
+  labs(
+    title = "Comparison of Body Mass by Sex across Imputation Methods",
+    x = "Sex",
+    y = "Body Mass (g)"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+```
+
+## The other way
+
+**Q7: Using the data frame with imputed data (KNN and MICE), repeat the
+outlier analysis (steps Q1-Q4). Compare the results of the two
+approaches: performing outlier analysis on a complete-case dataset
+(removing NAs) versus imputing missing values before conducting the
+outlier analysis.**
+
+```{r}
+# kNN data
+
+
+```
+
+```{r}
+# MICE data
+
+```
+
+## Multivariate matrices
+
+Using the data without missing values (complete cases: `df_clean`)
+answer the following questions:
+
+**Q8: Compute the sample mean vector** $m$, the centring matrix $H$ and
+the centered data matrix $X_c$. Only matrix and vector operations are
+allowed.
+
+```{r}
+
+```
+
+**Q9: Using the centered data matrix compute the sample covariance
+matrix** $S$. Only matrix and vector operations are allowed.
+
+```{r}
+
+```
+
+**Q10: Obtain the standardized data matrix** $X_s$ and use it to compute
+the sample correlation matrix $R$. Only matrix and vector operations are
+allowed.
+
+```{r}
+```
