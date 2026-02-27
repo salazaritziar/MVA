@@ -68,6 +68,10 @@ p <- ncol(df_clean) # Number of variables
 ```{r}
 df_clean$sex[df_clean$sex=='male'] = 1
 df_clean$sex[df_clean$sex=='female'] = 0
+#function as.numeric 
+df_clean$sex <- as.numeric(df_clean[[5]] == "male") 
+#logical vector where if "male" TRUE; 1 assigned
+head(df_clean) # "male" is transformed 1, "female" to 0
 ```
 
 ## Outliers analysis
