@@ -66,12 +66,9 @@ p <- ncol(df_clean) # Number of variables
 **Q1: Transform the *sex* variable so it can be used in the analysis.**
 
 ```{r}
-df_clean$sex[df_clean$sex=='male'] = 1
-df_clean$sex[df_clean$sex=='female'] = 0
-#function as.numeric 
-df_clean$sex <- as.numeric(df_clean[[5]] == "male") 
-#logical vector where if "male" TRUE; 1 assigned
-head(df_clean) # "male" is transformed 1, "female" to 0
+# Use function as.numeric 
+df_clean$sex <- as.numeric(df_clean[[5]] == "male") #logical vector where if "male" TRUE; 1 assigned
+head(df_clean) #"male" is transformed 1, "female" to 0
 ```
 
 ## Outliers analysis
@@ -86,7 +83,39 @@ threshold. Generate a scatter plot to display the dataset, highlighting
 any observations classified as outliers.\*\*
 
 ```{r}
+sum(is.na(df_clean)) #make sure no NAs
 
+# Select study vars (flipper lenght, bill length)
+df_lof <- df_clean[,c("flipper_length_mm", "bill_length_mm")]
+
+# Compute LOF scores k = 20
+lof_scores <-lof(df_lof, k=20) #set k to 20
+#Set threshold
+threshold <-quantile(lof_scores, 0.975, type = 7) #type 7 by default 
+
+# Classify outliers according to threshold
+df_lof$outlier <-ifelse(lof_scores > threshold, "Outlier", "Normal") 
+
+# Identify Top 5 outliers
+top5_idx <-order(lof_scores, decreasing = TRUE) [1:5] #top 2.5% obs LOF score > 9.1 classified as outlier
+df_lof$outlier[top5_idx] <- "Top 5 Outliers"
+
+# Do scatter plot
+ggplot(df_lof, aes(x = flipper_length_mm, y = bill_length_mm, color = outlier)) +
+  geom_point(aes(size = outlier), alpha = 0.7) +
+  scale_color_manual(values = c("Normal"         = "steelblue",
+                                "Outlier"        = "orange",
+                                "Top 5 Outliers" = "red")) +
+  scale_size_manual(values  = c("Normal"         = 1.5,
+                                "Outlier"        = 2.5,
+                                "Top 5 Outliers" = 4)) +
+  labs(title    = "LOF Outlier Detection (k = 20)",
+       subtitle = paste("Threshold (97.5% quantile):", round(threshold, 2)),
+       x        = "Flipper Length (mm)",
+       y        = "Bill Length (mm)",
+       color    = "Classification",
+       size     = "Classification") +
+  theme_minimal()
 ```
 
 **Q3: Use the Isolation Tree algorithm with** $100$ trees and identify
