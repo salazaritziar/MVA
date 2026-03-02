@@ -4,6 +4,7 @@ output: "pdf_document"
 editor_options: 
   markdown: 
     wrap: 72
+---º
 ---
 
 # Exercise 1: Preprocessing and multivariate analysis
@@ -31,6 +32,8 @@ list.of.packages = c(
   "tidyverse",
   "palmerpenguins",
   "missForest",
+  "naniar",
+  "isotree",
   "mice"
   ) 
 
@@ -125,9 +128,6 @@ any observations classified as outliers.\*\*
 
 ```{r}
 
-# Download recommended library 
-library("isotree")
-
 # Select the study vars (flipper lenght, bill length)
 df_iso <- df_clean[,c("flipper_length_mm", "bill_length_mm")]
 
@@ -214,9 +214,53 @@ Now using the `df` dataframe, answer the following questions:
 **Q5: Are there missing values? How we classify them (MCAR; MAR; MNAR)?
 Quantify the quality of the data using the missing values.**
 
+There are 19 missing values in the dataset distributed across variables:
+"bill_depth_mm" (2), "bill_length_mm" (2), "flipper_length_mm" (2),
+"body_mass_g" (2) and "sex" (11). Given a total number of 3096
+observations, the missingness represents only 0,55% of the values,
+consequently, the dataset is considered to be of high quality.
+
+According to literature, we can classify missing values in three
+different groups, thus being:
+
+-   MCAR (Missing completely at random): when the missingness is purely
+    a matter of chance.
+
+-   MAR (Missing at Random): the missingness is related to observed data
+    but not the missing values themselves.
+
+-   MNAR (Missing Not at Random): the missingness depends on the
+    unobserved value itself or other unmeasured factors.
+
 ```{r}
 
+## Sum number of NAs in df
+sum(is.na(df)) #total number of NAs
+colSums(is.na(df)) #number of NAs per column
+
+
+## Quality of the data 
+#Visualization
+vis_miss(df, sort_miss = TRUE) #ggplot of the missingness inside the df
+gg_miss_upset(df) #possible intersections bt the variables missingnes
+#Math
+(19/(344*9))*100 #% of missing data overall; less than 1%
+(11/344)*100 #% of missing in "sex"
+(8/(344*4))*100 #% of NAs across num vars
+
+## Classification between MCAR; MAR; MNAR
+#MCAR test 
+mcar_test(df) #check if the data is in the MCAR category (null hypothesis) p-value = 0.55 > 0.05, we fail to reject H₀ — meaning the data is consistent with MCAR
+
 ```
+
+To categorize the missing data, we conduct an MCAR test with a level of
+($\alpha = 0.05$). Since the resulting p-value is 0,55 we fail to reject
+the null hypothesis and conclude that the numerical variables are
+Missing Completely at Random (MCAR). This means that the missingness is
+stochastic and unrelated to any other observed variables. Consequently,
+these can be safely removed or imputed without introducing systematic
+bias into the model.
 
 **Q6: Perform a k-NN Imputation and a MICE imputation. Compare them.
 Which imputation has better quality? Why?**
@@ -309,20 +353,77 @@ answer the following questions:
 the centered data matrix $X_c$. Only matrix and vector operations are
 allowed.
 
+The sample mean vector $m$ is defined as:
+
+$\mathbf{m}_{p \times 1} = \frac{1}{n} \left( \mathbf{1}^T X \right)^T$
+
+The centering matrix $H$ is defined as:
+
+$H = I - \frac{1}{n} \mathbf{1} \mathbf{1}^T$
+
+To obtain the centered data matrix $X_c$ we must operate:
+
+$X_c = X - \mathbf{1}_{n \times 1} m^T = X - \frac{1}{n} \mathbf{1} \mathbf{1}^T X = \left( I - \frac{1}{n} \mathbf{1} \mathbf{1}^T \right) X$
+
+Which can be synthesized as: $X_c = H X$
+
 ```{r}
+##Previous steps
+
+# Create matrix X
+X <-as.matrix(df_clean[, sapply(df_clean, is.numeric)])
+
+# Define terms
+nX <- nrow(X) #Number of obs
+pX <- ncol(X) #Number of vars
+one_n <- matrix(1, nX, 1) #For easier calculations: create vector 1 with n dimensions
+I_n <- diag(nX) #For easier computations
+
+## Computation of the sample mean vector m (px1)
+m <- (1 / nX) * t(one) %*% X
+
+## Computation of the centering matrix H
+H <- I_n - (1 / nX) * one_n %*% t(one_n)
+
+## Computation centered data matrix Xc
+X_c <- H %*% X
 
 ```
 
 **Q9: Using the centered data matrix compute the sample covariance
 matrix** $S$. Only matrix and vector operations are allowed.
 
-```{r}
+The sample covariance matrix $S$ can be defined as:
+$S = \frac{1}{n-1} X_c^T X_c$
 
+```{r}
+## Computation of sample covariance matrix S
+S <- (1 / (nX - 1)) * t(X_c) %*% X_c
 ```
 
 **Q10: Obtain the standardized data matrix** $X_s$ and use it to compute
 the sample correlation matrix $R$. Only matrix and vector operations are
 allowed.
 
+The standardized data matrix can be defined as:
+
+$X_s = X_c D_s^{-1}$
+
+where $D_s$ is expressed as: ${diag}(s_1, s_2, \dots, s_p)$; and where
+$X_s$ can also be expressed as $X_s = H X D_s^{-1}$
+
+The sample correlation matrix $R$ is defined as:
+
+$R = D_s^{-1} S D_s^{-1} = \frac{1}{n-1} X_s^T X_s$
+
 ```{r}
+## Previous calculations
+std_devs <- apply(X_c, 2, sd) #sd for each var
+D_s <- diag(std_devs) #creation diag matrix Ds
+
+## Computation of the standardized data matrix Xs
+X_s <- X_c %*% solve(D_s) 
+
+## Computation of the sample correlation matrix R
+R <- solve(D_s) %*% S %*% solve(D_s)
 ```
