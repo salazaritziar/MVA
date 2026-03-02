@@ -113,7 +113,7 @@ ggplot(df_lof, aes(x = flipper_length_mm, y = bill_length_mm, color = outlier_lo
                                 "Outlier"        = 2.5,
                                 "Top 5 Outliers" = 4)) +
   labs(title    = "LOF Outlier Detection (k = 20)",
-       subtitle = paste("Threshold (97.5% quantile):", round(threshold, 2)),
+       subtitle = paste("Threshold (97.5% quantile):", round(thr_lof, 2)),
        x        = "Flipper Length (mm)",
        y        = "Bill Length (mm)",
        color    = "Classification",
@@ -158,7 +158,7 @@ ggplot(df_iso, aes(x = flipper_length_mm, y = bill_length_mm, color = outlier_is
                                 "Outlier"        = 2.5,
                                 "Top 5 Outliers" = 4)) +
   labs(title    = "Isolation Tree Outlier Detection (ntrees = 100)",
-       subtitle = paste("Threshold (97.5% quantile):", round(threshold, 2)),
+       subtitle = paste("Threshold (97.5% quantile):", round(thr_iso, 2)),
        x        = "Flipper Length (mm)",
        y        = "Bill Length (mm)",
        color    = "Classification",
@@ -380,7 +380,7 @@ one_n <- matrix(1, nX, 1) #For easier calculations: create vector 1 with n dimen
 I_n <- diag(nX) #For easier computations
 
 ## Computation of the sample mean vector m (px1)
-m <- (1 / nX) * t(one) %*% X
+m <- (1 / nX) * t(one_n) %*% X
 
 ## Computation of the centering matrix H
 H <- I_n - (1 / nX) * one_n %*% t(one_n)
