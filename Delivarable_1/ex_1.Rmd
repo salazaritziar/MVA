@@ -1,5 +1,6 @@
 ---
 title: "R Notebook"
+authors: "Enrique Akira Takiguchi and Itziar Salazar"
 output: "pdf_document"
 editor_options: 
   markdown: 
@@ -34,7 +35,8 @@ list.of.packages = c(
   "missForest",
   "naniar",
   "isotree",
-  "mice"
+  "mice",
+  "VIM"
   ) 
 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
@@ -257,10 +259,12 @@ mcar_test(df) #check if the data is in the MCAR category (null hypothesis) p-val
 To categorize the missing data, we conduct an MCAR test with a level of
 ($\alpha = 0.05$). Since the resulting p-value is 0,55 we fail to reject
 the null hypothesis and conclude that the numerical variables are
-Missing Completely at Random (MCAR). This means that the missingness is
-stochastic and unrelated to any other observed variables. Consequently,
-these can be safely removed or imputed without introducing systematic
-bias into the model.
+Missing Completely at Random (MCAR).
+
+This means that the missingness is stochastic and unrelated to any other
+observed variables. Consequently, the NAs we are dealing with can be
+safely removed or imputed without introducing systematic bias into the
+model.
 
 **Q6: Perform a k-NN Imputation and a MICE imputation. Compare them.
 Which imputation has better quality? Why?**
@@ -271,6 +275,13 @@ name `df_mice` in order to perform the plots. Think carefully your
 answers and check the consistency of the imputations.
 
 ```{r}
+
+## k-NN and MICE imputations
+df_1nn <- kNN(df, k = 1, imp_var=FALSE)
+imp_mice <- mice(df, m = 5, printFla=FALSE) #number of default imputations, PARA ENRIQUE: NO SE SI CALDRIA FER-NE DE MES O DE MENYS O FEM TOT BY DEFAULT 
+df_mice <-complete(imp_mice)
+
+## Code provided for the plots
 plot_columns <- cols[-c(1,6)]
 
 for (column in plot_columns){
@@ -324,6 +335,32 @@ ggplot(df_comparison, aes(x = sex, y = body_mass_g, fill = Method)) +
   theme(legend.position = "none")
 
 ```
+
+Once the computations are performed, it's difficult to observe any
+differences between the results of both imputation methods, as they are
+almost identical at first sight. Density plots reveal similar shapes,
+and boxplot show very similar medians and IQRs.
+
+To determine which method produces better results, we must consider
+their characteristics and properties, according to the methodologies
+used for computation. Thus being:
+
+-   1-NN: it only uses values that actually exist in our data so the
+    generating mechanism produces them. It is sensitive to outliers.
+
+-   MICE: it preserves the distribution (mean and variance). It accounts
+    for statistical uncertainty, therefore and shows better performance
+    than 1-NN when working with datasets with higher rates of
+    missingness.
+
+Nonetheless, if we had to choose one method over the other, we would
+stick with k-NN because the data we are working with has low missingness
+and low dimensionality. Also, k-NN can handle local groupings (keep in
+mind we are working with different types of penguin species).
+
+MICE would outperform k-NN if we were working with a much higher
+missingness ratio and a high-dimensional dataset. However, it is more
+computationally costly.
 
 ## The other way
 
@@ -393,7 +430,7 @@ X_c <- H %*% X
 **Q9: Using the centered data matrix compute the sample covariance
 matrix** $S$. Only matrix and vector operations are allowed.
 
-The sample covariance matrix $S$ can be defined as:
+The sample covariance matrix $S$ is defined as:
 $S = \frac{1}{n-1} X_c^T X_c$
 
 ```{r}
@@ -405,7 +442,7 @@ S <- (1 / (nX - 1)) * t(X_c) %*% X_c
 the sample correlation matrix $R$. Only matrix and vector operations are
 allowed.
 
-The standardized data matrix can be defined as:
+The standardized data matrix is known as:
 
 $X_s = X_c D_s^{-1}$
 
