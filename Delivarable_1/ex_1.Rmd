@@ -72,7 +72,7 @@ p <- ncol(df_clean) # Number of variables
 
 ```{r}
 # Use function as.numeric 
-df_clean$sex <- as.numeric(df_clean[[5]] == "male") #logical vector where if "male" TRUE; 1 assigned
+df_clean$sex <- as.numeric(df_clean$sex == "male") #logical vector where if "male" TRUE; 1 assigned
 head(df_clean) #"male" is transformed 1, "female" to 0
 ```
 
@@ -189,12 +189,12 @@ df_compare$lof_class <- df_lof$outlier_lof
 df_compare$iso_class <- df_iso$outlier_iso
 
 ggplot(df_compare, aes(x = flipper_length_mm, y = bill_length_mm)) +
-  geom_point(color = "steelblue", size = 2, alpha = 0.5) +
+  geom_point(color = "grey", size = 4, alpha = 0.3) +
   geom_point(data = df_compare[df_compare$lof_class == "Top 5 Outliers", ],
-             aes(color = "LOF"), size = 4, shape = 25) +
+             aes(color = "LOF"), size = 4, shape = 3) +
   geom_point(data = df_compare[df_compare$iso_class == "Top 5 Outliers", ],
-             aes(color = "Isolation Forest"), size = 4, shape = 24) +
-  scale_color_manual(values = c("LOF" = "orange", "Isolation Forest" = "red")) +
+             aes(color = "Isolation Forest"), size = 4, shape = 4) +
+  scale_color_manual(values = c("LOF" = "blue", "Isolation Forest" = "red")) +
   labs(title = "Top 5 Outliers: LOF vs Isolation Forest",
        x     = "Flipper Length (mm)",
        y     = "Bill Length (mm)",
@@ -237,8 +237,8 @@ different groups, thus being:
 ```{r}
 
 ## Sum number of NAs in df
-sum(is.na(df)) #total number of NAs
-colSums(is.na(df)) #number of NAs per column
+cat('Total number of NAs:', sum(is.na(df)), '\n')
+(NAs_per_column = data.frame(NAs=colSums(is.na(df))))
 
 
 ## Quality of the data 
@@ -372,21 +372,113 @@ outlier analysis.**
 
 ```{r}
 # kNN data
+# Select study vars (flipper lenght, bill length)
+df.knn <- df_1nn[,c("flipper_length_mm", "bill_length_mm")]
+
+# Compute LOF scores k = 20
+lof_scores <-lof(df.knn, k=20) #set k to 20
+#Set threshold
+thr_lof <-quantile(lof_scores, 0.975, type = 7) #type 7 by default 
+
+# Classify outliers according to threshold
+df.knn$outlier_lof <-ifelse(lof_scores >= thr_lof, "Outlier", "Normal") 
+
+# Identify Top 5 outliers
+top5_idx_lof <-order(lof_scores, decreasing = TRUE) [1:5] #top 2.5% obs LOF score > 9.1 classified as outlier
+df.knn$outlier_lof[top5_idx_lof] <- "Top 5 Outliers"
 
 
+
+iso_scores <-predict(iso_forest, df.knn, type = "score")
+
+# Set threshold
+thr_iso <-quantile(iso_scores, 0.975, type = 7) #type 7 by default 
+
+# Classify outliers according to threshold
+df.knn$outlier_iso <-ifelse(iso_scores >= thr_iso, "Outlier", "Normal") 
+
+# Identify Top 5 outliers
+top5_idx_iso <-order(iso_scores, decreasing = TRUE) [1:5] #top 2.5% obs are considered outliers
+df.knn$outlier_iso[top5_idx_iso] <- "Top 5 Outliers" 
+
+ggplot(df.knn, aes(x = flipper_length_mm, y = bill_length_mm)) +
+  geom_point(color = "grey", size = 4, alpha = 0.3) +
+  geom_point(data = df.knn[df.knn$outlier_lof == "Top 5 Outliers", ],
+             aes(color = "LOF"), size = 4, shape = 3) +
+  geom_point(data = df.knn[df.knn$outlier_iso == "Top 5 Outliers", ],
+             aes(color = "Isolation Forest"), size = 4, shape = 4) +
+  scale_color_manual(values = c("LOF" = "blue", "Isolation Forest" = "red")) +
+  labs(title = "Top 5 Outliers: LOF vs Isolation Forest using KNN",
+       x     = "Flipper Length (mm)",
+       y     = "Bill Length (mm)",
+       color = "Method") +
+  theme_minimal()
 ```
 
 ```{r}
 # MICE data
+# kNN data
+# Select study vars (flipper lenght, bill length)
+df.mice <- df_mice[,c("flipper_length_mm", "bill_length_mm")]
 
+# Compute LOF scores k = 20
+lof_scores <-lof(df.mice, k=20) #set k to 20
+#Set threshold
+thr_lof <-quantile(lof_scores, 0.975, type = 7) #type 7 by default 
+
+# Classify outliers according to threshold
+df.mice$outlier_lof <-ifelse(lof_scores >= thr_lof, "Outlier", "Normal") 
+
+# Identify Top 5 outliers
+top5_idx_lof <-order(lof_scores, decreasing = TRUE) [1:5] #top 2.5% obs LOF score > 9.1 classified as outlier
+df.mice$outlier_lof[top5_idx_lof] <- "Top 5 Outliers"
+
+
+
+iso_scores <-predict(iso_forest, df.mice, type = "score")
+
+# Set threshold
+thr_iso <-quantile(iso_scores, 0.975, type = 7) #type 7 by default 
+
+# Classify outliers according to threshold
+df.mice$outlier_iso <-ifelse(iso_scores >= thr_iso, "Outlier", "Normal") 
+
+# Identify Top 5 outliers
+top5_idx_iso <-order(iso_scores, decreasing = TRUE) [1:5] #top 2.5% obs are considered outliers
+df.mice$outlier_iso[top5_idx_iso] <- "Top 5 Outliers" 
+
+ggplot(df.mice, aes(x = flipper_length_mm, y = bill_length_mm)) +
+  geom_point(color = "grey", size = 4, alpha = 0.3) +
+  geom_point(data = df.mice[df.mice$outlier_lof == "Top 5 Outliers", ],
+             aes(color = "LOF"), size = 4, shape = 3) +
+  geom_point(data = df.mice[df.mice$outlier_iso == "Top 5 Outliers", ],
+             aes(color = "Isolation Forest"), size = 4, shape = 4) +
+  scale_color_manual(values = c("LOF" = "blue", "Isolation Forest" = "red")) +
+  labs(title = "Top 5 Outliers: LOF vs Isolation Forest using MICE",
+       x     = "Flipper Length (mm)",
+       y     = "Bill Length (mm)",
+       color = "Method") +
+  theme_minimal()
 ```
+
+Both 1nn and MICE imputation approaches converge to the same outliers,
+which was to be expected given that distributions and boxplots were
+nearly identical.
+
+However, respect outlier treatment with the complete-case dataset, we do
+find a single difference in the LOF outliers, where one of the outliers
+has switched place.
+
+Given that the outliers were the same with the exception of this single
+point, we can say that using a technique or the other has almost no
+effect.
 
 ## Multivariate matrices
 
 Using the data without missing values (complete cases: `df_clean`)
 answer the following questions:
 
-**Q8: Compute the sample mean vector** $m$, the centring matrix $H$ and
+**Q8: Compute the sample mean vector** $m$, the centering matrix $H$ and
 the centered data matrix $X_c$. Only matrix and vector operations are
 allowed.
 
