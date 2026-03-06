@@ -18,7 +18,7 @@ preprocessing.
 
 The work **must** be done in pairs.
 
-```{r}
+```{r, warning=FALSE, comment=NA, echo=FALSE}
 list.of.packages = c(
   "ggplot2", 
   "outliers", 
@@ -74,7 +74,7 @@ p <- ncol(df_clean) # Number of variables
 ```{r}
 # Use function as.numeric 
 df_clean$sex <- as.numeric(df_clean$sex == "male") #logical vector where if "male" TRUE; 1 assigned
-head(df_clean) #"male" is transformed 1, "female" to 0
+head(df_clean) #"male" is transformed to 1, "female" to 0
 ```
 
 ## Outliers analysis
@@ -83,10 +83,10 @@ Using the **df_clean** dataframe answer the following questions. Focus
 on the variables *Flipper length* and *Bill length* for all the
 analyses.
 
-**Q2: Use the Local Outlier Factor method (with** $k=20$) and identify
-the top five outliers using the quantile $97.5\%$ tp find the score
+**Q2: Use the Local Outlier Factor method (with** $k=20$**) and identify
+the top five outliers using the quantile** $97.5\%$ **to find the score
 threshold. Generate a scatter plot to display the dataset, highlighting
-any observations classified as outliers.\*\*
+any observations classified as outliers.**
 
 ```{r}
 sum(is.na(df_clean)) #make sure no NAs
@@ -109,7 +109,7 @@ df_lof$outlier_lof[top5_idx_lof] <- "Top 5 Outliers"
 # Do scatter plot
 ggplot(df_lof, aes(x = flipper_length_mm, y = bill_length_mm,
           color = outlier_lof, shape = outlier_lof)) +
-  geom_point(aes(size = outlier_lof), alpha = 0.3) +
+  geom_point(aes(size = outlier_lof), alpha = 0.6) +
   scale_shape_manual(values = c("Normal"         = 19,
                                 "Outlier"        = 1,
                                 "Top 5 Outliers" = 10)) +
@@ -130,10 +130,10 @@ ggplot(df_lof, aes(x = flipper_length_mm, y = bill_length_mm,
 
 ```
 
-**Q3: Use the Isolation Tree algorithm with** $100$ trees and identify
-the top five outliers. Use the quantile $97.5\%$ to find the score
+**Q3: Use the Isolation Tree algorithm with** $100$ **trees and identify
+the top five outliers. Use the quantile** $97.5\%$ **to find the score
 threshold Generate a scatter plot to display the dataset, highlighting
-any observations classified as outliers.\*\*
+any observations classified as outliers.**
 
 ```{r}
 
@@ -160,7 +160,7 @@ df_iso$outlier_iso[top5_idx_iso] <- "Top 5 Outliers"
 
 ggplot(df_iso, aes(x = flipper_length_mm, y = bill_length_mm,
           color = outlier_iso, shape = outlier_iso)) +
-  geom_point(aes(size = outlier_iso), alpha = 0.3) +
+  geom_point(aes(size = outlier_iso), alpha = 0.6) +
   scale_shape_manual(values = c("Normal"         = 19,
                                 "Outlier"        = 1,
                                 "Top 5 Outliers" = 13)) +
@@ -201,7 +201,7 @@ df_compare$lof_class <- df_lof$outlier_lof
 df_compare$iso_class <- df_iso$outlier_iso
 
 ggplot(df_compare, aes(x = flipper_length_mm, y = bill_length_mm)) +
-  geom_point(color = "grey", size = 4, alpha = 0.3) +
+  geom_point(color = "grey", size = 4, alpha = 0.6) +
   geom_point(data = df_compare[df_compare$lof_class == "Top 5 Outliers", ],
              aes(color = "LOF"), size = 4, shape = 3) +
   geom_point(data = df_compare[df_compare$iso_class == "Top 5 Outliers", ],
@@ -246,7 +246,7 @@ different groups, thus being:
 -   MNAR (Missing Not at Random): the missingness depends on the
     unobserved value itself or other unmeasured factors.
 
-```{r}
+```{r, warning=FALSE}
 
 ## Sum number of NAs in df
 cat('Total number of NAs:', sum(is.na(df)), '\n')
@@ -256,7 +256,7 @@ cat('Total number of NAs:', sum(is.na(df)), '\n')
 ## Quality of the data 
 #Visualization
 vis_miss(df, sort_miss = TRUE) #ggplot of the missingness inside the df
-gg_miss_upset(df) #possible intersections bt the variables missingnes
+gg_miss_upset(df) #possible intersections bt the variables' missingnes
 #Math
 (19/(344*9))*100 #% of missing data overall; less than 1%
 (11/344)*100 #% of missing in "sex"
@@ -290,7 +290,7 @@ answers and check the consistency of the imputations.
 
 ## k-NN and MICE imputations
 df_1nn <- kNN(df, k = 1, imp_var=FALSE)
-imp_mice <- mice(df, m = 5, printFla=FALSE) #number of default imputations, PARA ENRIQUE: NO SE SI CALDRIA FER-NE DE MES O DE MENYS O FEM TOT BY DEFAULT 
+imp_mice <- mice(df, m = 5, printFla=FALSE) #number of default imputations
 df_mice <-complete(imp_mice)
 
 ## Code provided for the plots
@@ -336,7 +336,7 @@ df_comparison <- df_comparison %>%
   mutate(sex = factor(sex, labels = c("Female", "Male")))
 
 ggplot(df_comparison, aes(x = sex, y = body_mass_g, fill = Method)) +
-  geom_boxplot(alpha = 0.7) +
+  geom_boxplot(alpha = 0.6) +
   facet_wrap(~ Method) +
   labs(
     title = "Comparison of Body Mass by Sex across Imputation Methods",
@@ -414,7 +414,7 @@ top5_idx_iso <-order(iso_scores, decreasing = TRUE) [1:5] #top 2.5% obs are cons
 df.knn$outlier_iso[top5_idx_iso] <- "Top 5 Outliers" 
 
 ggplot(df.knn, aes(x = flipper_length_mm, y = bill_length_mm)) +
-  geom_point(color = "grey", size = 4, alpha = 0.3) +
+  geom_point(color = "grey", size = 4, alpha = 0.6) +
   geom_point(data = df.knn[df.knn$outlier_lof == "Top 5 Outliers", ],
              aes(color = "LOF"), size = 4, shape = 3) +
   geom_point(data = df.knn[df.knn$outlier_iso == "Top 5 Outliers", ],
@@ -460,7 +460,7 @@ top5_idx_iso <-order(iso_scores, decreasing = TRUE) [1:5] #top 2.5% obs are cons
 df.mice$outlier_iso[top5_idx_iso] <- "Top 5 Outliers" 
 
 ggplot(df.mice, aes(x = flipper_length_mm, y = bill_length_mm)) +
-  geom_point(color = "grey", size = 4, alpha = 0.3) +
+  geom_point(color = "grey", size = 4, alpha = 0.6) +
   geom_point(data = df.mice[df.mice$outlier_lof == "Top 5 Outliers", ],
              aes(color = "LOF"), size = 4, shape = 3) +
   geom_point(data = df.mice[df.mice$outlier_iso == "Top 5 Outliers", ],
@@ -489,9 +489,9 @@ effect for this dataset.
 Using the data without missing values (complete cases: `df_clean`)
 answer the following questions:
 
-**Q8: Compute the sample mean vector** $m$, the centering matrix $H$ and
-the centered data matrix $X_c$. Only matrix and vector operations are
-allowed.
+**Q8: Compute the sample mean vector** $m$**, the centering matrix** $H$
+**and the centered data matrix** $X_c$**. Only matrix and vector
+operations are allowed.**
 
 The sample mean vector $m$ is defined as:
 
@@ -514,10 +514,10 @@ Which can be synthesized as: $X_c = H X$
 X <-as.matrix(df_clean[, sapply(df_clean, is.numeric)])
 
 # Define terms
-nX <- nrow(X) #Number of obs
-pX <- ncol(X) #Number of vars
-one_n <- matrix(1, nX, 1) #For easier calculations: create vector 1 with n dimensions
-I_n <- diag(nX) #For easier computations
+nX <- nrow(X) #number of obs
+pX <- ncol(X) #number of vars
+one_n <- matrix(1, nX, 1) #for easier calculations: create vector 1 with n dimensions
+I_n <- diag(nX) #for easier computations
 
 ## Computation of the sample mean vector m (px1)
 m <- (1 / nX) * t(one_n) %*% X
@@ -527,12 +527,12 @@ H <- I_n - (1 / nX) * one_n %*% t(one_n)
 
 ## Computation centered data matrix Xc
 X_c <- H %*% X
-print('Means by column of centered data matrix')
+
 round(apply(X_c, 2, mean), 2)
 ```
 
-**Q9: Using the centered data matrix compute the sample covariance
-matrix** $S$. Only matrix and vector operations are allowed.
+**Q9: Using the centered** **data matrix compute the sample covariance
+matrix** $S$**. Only matrix and vector operations are allowed.**
 
 The sample covariance matrix $S$ is defined as:
 $S = \frac{1}{n-1} X_c^T X_c$
@@ -542,9 +542,9 @@ $S = \frac{1}{n-1} X_c^T X_c$
 (S <- (1 / (nX - 1)) * t(X_c) %*% X_c)
 ```
 
-**Q10: Obtain the standardized data matrix** $X_s$ and use it to compute
-the sample correlation matrix $R$. Only matrix and vector operations are
-allowed.
+**Q10: Obtain the standardized data** **matrix** $X_s$ **and use it to
+compute the sample correlation matrix** $R$**. Only matrix and vector
+operations are allowed.**
 
 The standardized data matrix is defined as follows:
 
@@ -557,7 +557,7 @@ The sample correlation matrix $R$ is defined as:
 
 $R = D_s^{-1} S D_s^{-1} = \frac{1}{n-1} X_s^T X_s$
 
-```{r}
+```{r, warning=FALSE}
 ## Previous calculations
 #std_devs <- apply(X_c, 2, sd) #sd for each var
 D_s <- diag(diag(sqrt(S))) #creation diag matrix Ds
@@ -565,7 +565,6 @@ D_s <- diag(diag(sqrt(S))) #creation diag matrix Ds
 ## Computation of the standardized data matrix Xs
 X_s <- X_c %*% solve(D_s) 
 
-print('Sd by column of standardized data matrix')
 round(apply(X_s, 2, sd), 2)
 
 ## Computation of the sample correlation matrix R
