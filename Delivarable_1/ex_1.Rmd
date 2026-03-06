@@ -1,11 +1,12 @@
 ---
 title: "R Notebook"
-authors: "Enrique Akira Takiguchi and Itziar Salazar"
-output: "pdf_document"
-editor_options: 
-  markdown: 
+authors: Enrique Akira Takiguchi and Itziar Salazar
+output:
+  html_document:
+    df_print: paged
+editor_options:
+  markdown:
     wrap: 72
----º
 ---
 
 # Exercise 1: Preprocessing and multivariate analysis
@@ -41,7 +42,7 @@ list.of.packages = c(
 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages) > 0) {
-  install.packages(new.packages)
+  install.packages(new.packages, repos = "https://cloud.r-project.org")
 }
 lapply(list.of.packages, require, character.only = T)
 rm(list.of.packages, new.packages)
@@ -106,21 +107,27 @@ top5_idx_lof <-order(lof_scores, decreasing = TRUE) [1:5] #top 2.5% obs LOF scor
 df_lof$outlier_lof[top5_idx_lof] <- "Top 5 Outliers"
 
 # Do scatter plot
-ggplot(df_lof, aes(x = flipper_length_mm, y = bill_length_mm, color = outlier_lof)) +
-  geom_point(aes(size = outlier_lof), alpha = 0.7) +
-  scale_color_manual(values = c("Normal"         = "steelblue",
-                                "Outlier"        = "orange",
-                                "Top 5 Outliers" = "red")) +
-  scale_size_manual(values  = c("Normal"         = 1.5,
-                                "Outlier"        = 2.5,
-                                "Top 5 Outliers" = 4)) +
-  labs(title    = "LOF Outlier Detection (k = 20)",
+ggplot(df_lof, aes(x = flipper_length_mm, y = bill_length_mm,
+          color = outlier_lof, shape = outlier_lof)) +
+  geom_point(aes(size = outlier_lof), alpha = 0.3) +
+  scale_shape_manual(values = c("Normal"         = 19,
+                                "Outlier"        = 1,
+                                "Top 5 Outliers" = 10)) +
+  scale_color_manual(values = c("Normal"         = "grey",
+                                "Outlier"        = "blue",
+              "Top 5 Outliers" = "blue")) +
+  scale_size_manual(values  = c("Normal"         = 4,
+              "Outlier"        = 4,
+              "Top 5 Outliers" = 4)) +
+  labs(title    = "Local Outlier Factor Detection",
        subtitle = paste("Threshold (97.5% quantile):", round(thr_lof, 2)),
        x        = "Flipper Length (mm)",
        y        = "Bill Length (mm)",
-       color    = "Classification",
-       size     = "Classification") +
+    color    = "Classification",
+    shape    = "Classification",
+    size     = "Classification") +
   theme_minimal()
+
 ```
 
 **Q3: Use the Isolation Tree algorithm with** $100$ trees and identify
@@ -134,7 +141,7 @@ any observations classified as outliers.\*\*
 df_iso <- df_clean[,c("flipper_length_mm", "bill_length_mm")]
 
 # Train isolation forest 
-iso_forest <-isolation.forest(df_iso, ntrees = 100) #set ntrees to 100
+iso_forest <-isolation.forest(df_iso, ndim=2, ntrees = 100) #set ntrees to 100
 
 # Generate an anomaly score for each obs (between 0 and 1). The closer to 1, the more likely to be an outlier
 iso_scores <-predict(iso_forest, df_iso, type = "score")
@@ -151,20 +158,25 @@ df_iso$outlier_iso[top5_idx_iso] <- "Top 5 Outliers"
 
 # Do scatter plot
 
-ggplot(df_iso, aes(x = flipper_length_mm, y = bill_length_mm, color = outlier_iso)) +
-  geom_point(aes(size = outlier_iso), alpha = 0.7) +
-  scale_color_manual(values = c("Normal"         = "steelblue",
-                                "Outlier"        = "orange",
-                                "Top 5 Outliers" = "red")) +
-  scale_size_manual(values  = c("Normal"         = 1.5,
-                                "Outlier"        = 2.5,
-                                "Top 5 Outliers" = 4)) +
+ggplot(df_iso, aes(x = flipper_length_mm, y = bill_length_mm,
+          color = outlier_iso, shape = outlier_iso)) +
+  geom_point(aes(size = outlier_iso), alpha = 0.3) +
+  scale_shape_manual(values = c("Normal"         = 19,
+                                "Outlier"        = 1,
+                                "Top 5 Outliers" = 13)) +
+  scale_color_manual(values = c("Normal"         = "grey",
+                                "Outlier"        = "red",
+              "Top 5 Outliers" = "red")) +
+  scale_size_manual(values  = c("Normal"         = 4,
+              "Outlier"        = 4,
+              "Top 5 Outliers" = 4)) +
   labs(title    = "Isolation Tree Outlier Detection (ntrees = 100)",
        subtitle = paste("Threshold (97.5% quantile):", round(thr_iso, 2)),
        x        = "Flipper Length (mm)",
        y        = "Bill Length (mm)",
-       color    = "Classification",
-       size     = "Classification") +
+    color    = "Classification",
+    shape    = "Classification",
+    size     = "Classification") +
   theme_minimal()
 
 ```
@@ -388,7 +400,7 @@ top5_idx_lof <-order(lof_scores, decreasing = TRUE) [1:5] #top 2.5% obs LOF scor
 df.knn$outlier_lof[top5_idx_lof] <- "Top 5 Outliers"
 
 
-
+iso_forest <-isolation.forest(df.knn, ndim=2, ntrees = 100) #set ntrees to 100
 iso_scores <-predict(iso_forest, df.knn, type = "score")
 
 # Set threshold
@@ -434,7 +446,7 @@ top5_idx_lof <-order(lof_scores, decreasing = TRUE) [1:5] #top 2.5% obs LOF scor
 df.mice$outlier_lof[top5_idx_lof] <- "Top 5 Outliers"
 
 
-
+iso_forest <-isolation.forest(df.mice, ndim=2, ntrees = 100) #set ntrees to 100
 iso_scores <-predict(iso_forest, df.mice, type = "score")
 
 # Set threshold
@@ -466,12 +478,11 @@ which was to be expected given that distributions and boxplots were
 nearly identical.
 
 However, respect outlier treatment with the complete-case dataset, we do
-find a single difference in the LOF outliers, where one of the outliers
-has switched place.
+find a single difference for both the LOF and isolation tree algorithms
 
 Given that the outliers were the same with the exception of this single
-point, we can say that using a technique or the other has almost no
-effect.
+point, we can say that using a technique or the other has no significant
+effect for this dataset.
 
 ## Multivariate matrices
 
@@ -516,7 +527,8 @@ H <- I_n - (1 / nX) * one_n %*% t(one_n)
 
 ## Computation centered data matrix Xc
 X_c <- H %*% X
-
+print('Means by column of centered data matrix')
+round(apply(X_c, 2, mean), 2)
 ```
 
 **Q9: Using the centered data matrix compute the sample covariance
@@ -527,14 +539,14 @@ $S = \frac{1}{n-1} X_c^T X_c$
 
 ```{r}
 ## Computation of sample covariance matrix S
-S <- (1 / (nX - 1)) * t(X_c) %*% X_c
+(S <- (1 / (nX - 1)) * t(X_c) %*% X_c)
 ```
 
 **Q10: Obtain the standardized data matrix** $X_s$ and use it to compute
 the sample correlation matrix $R$. Only matrix and vector operations are
 allowed.
 
-The standardized data matrix is known as:
+The standardized data matrix is defined as follows:
 
 $X_s = X_c D_s^{-1}$
 
@@ -547,12 +559,16 @@ $R = D_s^{-1} S D_s^{-1} = \frac{1}{n-1} X_s^T X_s$
 
 ```{r}
 ## Previous calculations
-std_devs <- apply(X_c, 2, sd) #sd for each var
-D_s <- diag(std_devs) #creation diag matrix Ds
+#std_devs <- apply(X_c, 2, sd) #sd for each var
+D_s <- diag(diag(sqrt(S))) #creation diag matrix Ds
 
 ## Computation of the standardized data matrix Xs
 X_s <- X_c %*% solve(D_s) 
 
+print('Sd by column of standardized data matrix')
+round(apply(X_s, 2, sd), 2)
+
 ## Computation of the sample correlation matrix R
-R <- solve(D_s) %*% S %*% solve(D_s)
+#R <- solve(D_s) %*% S %*% solve(D_s)
+(R = 1/(nX-1) * t(X_s) %*% X_s)
 ```
